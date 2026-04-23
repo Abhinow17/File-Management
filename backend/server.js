@@ -3,11 +3,27 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const corsOrigin = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()).filter(Boolean)
-  : true;
+function normalizeOrigin(origin) {
+  return String(origin || '').trim().toLowerCase().replace(/\/+$/, '');
+}
 
-app.use(cors({ origin: corsOrigin }));
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(normalizeOrigin).filter(Boolean)
+  : [];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow server-to-server requests and local tools that send no Origin header.
+    if (!origin) return callback(null, true);
+
+    // If no allowlist is configured, allow all origins.
+    if (allowedOrigins.length === 0) return callback(null, true);
+
+    const normalized = normalizeOrigin(origin);
+    if (allowedOrigins.includes(normalized)) return callback(null, true);
+    return callback(null, false);
+  },
+}));
 app.use(express.json());
 
 // ─── Tree Data Structure ────────────────────────────────────────────────────
