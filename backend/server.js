@@ -3,7 +3,11 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()).filter(Boolean)
+  : true;
+
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 
 // ─── Tree Data Structure ────────────────────────────────────────────────────
@@ -264,8 +268,14 @@ app.get('/api/search', (req, res) => {
   res.json(results);
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
+
 app.get("/", (req, res) => {
-  res.send("File System API is running 🚀");
+  res.send("File System API is running");
 });
-app.listen(PORT, () => console.log(`File System API running on http://localhost:${PORT}`));
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
+app.listen(PORT, () => console.log(`File System API running on port ${PORT}`));
